@@ -1,0 +1,13 @@
+FROM postgis/postgis:16-3.4
+
+USER root
+
+# Lưu ý: Tôi đổi về bản 16 vì hiện tại bản 18 chưa phổ biến/ổn định trên các repo chính thức.
+# Nếu bạn chắc chắn dùng bản 18, bạn có thể sửa lại số 16 thành 18.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    postgresql-16-pgvector \
+    postgresql-16-pgsphere && \
+    rm -rf /var/lib/apt/lists/*
+
+USER postgres

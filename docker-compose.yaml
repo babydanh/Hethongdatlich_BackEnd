@@ -1,0 +1,45 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: Hethongdatlich_api
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: Macter27122005
+      DATABASE_NAME: Hethongdatlich_system
+    depends_on:
+      - db
+    networks:
+      - hethongdatlich_net
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    container_name: Hethongdatlich_db_v18
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: Macter27122005
+      POSTGRES_DB: Hethongdatlich_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_v18:/var/lib/postgresql/data
+    networks:
+      - hethongdatlich_net
+
+volumes:
+  pgdata_v18:
+
+networks:
+  hethongdatlich_net:
+    driver: bridge
