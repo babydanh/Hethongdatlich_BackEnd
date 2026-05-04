@@ -3,6 +3,7 @@
 Đây là tài liệu mô tả cấu trúc cơ sở dữ liệu (Database Schema) cho hệ thống đặt lịch đa nền tảng (Micro-Booking Platform) sử dụng **PostgreSQL**.
 
 ## Điểm nhấn công nghệ (Core Features)
+
 1. **AI Semantic Search**: Sử dụng extension `pgvector` để cho phép tìm kiếm ngữ nghĩa (tìm kiếm dịch vụ theo ý định người dùng thay vì chỉ khớp từ khóa).
 2. **Dynamic Schema (JSONB)**: Cho phép các tiệm/cửa hàng tự định nghĩa các thuộc tính riêng cho dịch vụ của họ (ví dụ: Spa có loại da, Sân bóng có loại cỏ) mà không cần phải thay đổi cấu trúc bảng.
 3. **Soft Delete**: Dữ liệu không bao giờ bị xóa hẳn (dùng cột `deleted_at`) để đảm bảo toàn vẹn lịch sử giao dịch và kế toán.
@@ -21,7 +22,7 @@
   - Hỗ trợ **Gallery (JSONB)** để lưu album ảnh thực tế của cửa hàng từ Cloudinary.
   - Quản lý trạng thái kiểm duyệt (`status`) và chỉ số uy tín (`rating_avg`, `review_count`).
 - **`merchant_staffs`**: Quản lý nhân sự của từng cửa hàng.
-  - Liên kết giữa `merchants` và `users`. 
+  - Liên kết giữa `merchants` và `users`.
   - Cho phép phân quyền nội bộ trong tiệm (Manager, Employee).
 - **`merchant_revisions`**: Kiểm duyệt các thay đổi thông tin quan trọng của chủ tiệm (Tên, Địa chỉ, MST).
 
@@ -34,7 +35,7 @@
   - `search_text` & `embedding` (vector): Phục vụ AI Search.
 - **`service_categories`**: Một dịch vụ có thể thuộc nhiều danh mục (Ví dụ: Gội đầu thuộc cả danh mục "Làm đẹp" và "Thư giãn").
 - **`service_revisions`**: Lưu lại các bản nháp (thêm/sửa/xóa) dịch vụ của chủ tiệm. Khi nào Admin gọi Procedure `approve_service_revision` thì dữ liệu mới được merge vào bảng `services` chính.
-- **`resources`**: Quản lý tài nguyên vật lý để chống đụng lịch (Overbooking). 
+- **`resources`**: Quản lý tài nguyên vật lý để chống đụng lịch (Overbooking).
   - Ví dụ: Thợ cắt tóc, sân bóng, giường Spa. Khách book dịch vụ sẽ chiếm dụng tài nguyên này trong 1 khoảng thời gian.
 
 ## 3. Module Giao dịch lõi (Transactions & Bookings)
@@ -62,6 +63,7 @@
 ## 5. Tối ưu hóa hiệu năng (Indexes)
 
 Cơ sở dữ liệu được thiết kế với rất nhiều Index để đảm bảo tốc độ truy vấn ở quy mô lớn:
+
 - **Index HNSW**: `idx_services_embedding` cho phép tìm kiếm vector siêu tốc.
 - **Index GIN**: Dùng để tìm kiếm chính xác vào bên trong các field JSONB (`attributes`).
 - **B-Tree Index Đa cột**: `idx_bookings_time` (resource_id, start_time, end_time) giúp truy vấn tìm khung giờ rảnh siêu nhanh để chống đụng lịch.
@@ -89,8 +91,8 @@ CREATE EXTENSION IF NOT EXISTS pg_sphere;
 SET session_replication_role = 'replica';
 
 -- Xóa tất cả các bảng bạn đã liệt kê
-DROP TABLE IF EXISTS messages, chat_rooms, promotions, reviews, transactions, bookings, 
-                     resources, service_revisions, service_categories, services, 
+DROP TABLE IF EXISTS messages, chat_rooms, promotions, reviews, transactions, bookings,
+                     resources, service_revisions, service_categories, services,
                      category_requests, categories, merchants, profiles, users, roles CASCADE;
 
 -- Bật lại kiểm tra khóa ngoại
@@ -123,7 +125,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role_id INT REFERENCES roles(id),
     is_active BOOLEAN DEFAULT TRUE,
-    
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ NULL
@@ -178,23 +180,23 @@ CREATE TABLE merchants (
     location geography(POINT, 4326),
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
-    
+
     logo_url TEXT,
     banner_url TEXT,
     gallery JSONB DEFAULT '[]'::jsonb,
     description TEXT,
     operating_hours JSONB DEFAULT '{}'::jsonb,
-    
+
     is_verified BOOLEAN DEFAULT FALSE,
     rating_avg DECIMAL(3, 2) DEFAULT 0,
     review_count INT DEFAULT 0,
-    
+
     province_id INTEGER REFERENCES provinces(code),
     district_id INTEGER REFERENCES districts(code),
     ward_id INTEGER REFERENCES wards(code),
-    
+
     status VARCHAR(20) DEFAULT 'pending',
-    
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ NULL
@@ -237,12 +239,12 @@ CREATE TABLE merchant_staffs (
 CREATE TABLE categories (
     id BIGSERIAL PRIMARY KEY,
     uid UUID DEFAULT uuid_generate_v4() UNIQUE,
-    name VARCHAR(255) NOT NULL,          
+    name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL,   -- VD: lam-dep, the-thao (Dùng cho URL SEO)
-    icon_url TEXT,                       
-    banner_url TEXT,                     
+    icon_url TEXT,
+    banner_url TEXT,
     is_active BOOLEAN DEFAULT TRUE,
-    
+
     deleted_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -256,11 +258,11 @@ CREATE TABLE category_requests (
     id BIGSERIAL PRIMARY KEY,
     uid UUID DEFAULT uuid_generate_v4() UNIQUE,
     merchant_id BIGINT REFERENCES merchants(id) ON DELETE CASCADE,
-    requested_name VARCHAR(255) NOT NULL, 
-    reason TEXT, 
+    requested_name VARCHAR(255) NOT NULL,
+    reason TEXT,
     status VARCHAR(20) DEFAULT 'pending', -- 'pending' (chờ), 'approved' (duyệt), 'rejected' (từ chối), 'merged' (gộp)
     resolved_category_id BIGINT REFERENCES categories(id) NULL, -- Trỏ về ID chính thức sau khi được Admin duyệt
-    
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -273,21 +275,21 @@ CREATE TABLE category_requests (
 CREATE TABLE services (
     id BIGSERIAL PRIMARY KEY,
     uid UUID DEFAULT uuid_generate_v4() UNIQUE,
-    merchant_id BIGINT REFERENCES merchants(id) ON DELETE CASCADE,               
+    merchant_id BIGINT REFERENCES merchants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     base_price DECIMAL(12, 2) NOT NULL,
-    duration_minutes INT NOT NULL,      
-    
+    duration_minutes INT NOT NULL,
+
     image_urls JSONB DEFAULT '[]'::jsonb, -- Album ảnh dịch vụ
-    attributes JSONB DEFAULT '{}'::jsonb, 
-    
-    search_text TEXT,                                  
-    embedding vector(1536),             
-    
+    attributes JSONB DEFAULT '{}'::jsonb,
+
+    search_text TEXT,
+    embedding vector(1536),
+
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL         
+    deleted_at TIMESTAMPTZ NULL
 );
 
 /*
@@ -309,13 +311,13 @@ CREATE TABLE service_revisions (
     uid UUID DEFAULT uuid_generate_v4() UNIQUE,
     merchant_id BIGINT REFERENCES merchants(id) ON DELETE CASCADE,
     service_id BIGINT REFERENCES services(id) ON DELETE CASCADE, -- NULL nếu là lệnh xin Tạo mới (CREATE)
-    
+
     action_type VARCHAR(20) NOT NULL,     -- 'CREATE', 'UPDATE', 'DELETE'
     payload JSONB NOT NULL,               -- Toàn bộ data cấu hình dịch vụ nằm trong này
-    
+
     status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
     admin_note TEXT,                      -- Phản hồi của Admin khi từ chối
-    
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -329,14 +331,14 @@ CREATE TABLE resources (
     uid UUID DEFAULT uuid_generate_v4() UNIQUE,
     merchant_id BIGINT REFERENCES merchants(id) ON DELETE CASCADE,
     image_url TEXT,
-    name VARCHAR(255) NOT NULL,         
-    type VARCHAR(50) NOT NULL,          
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL,
     capacity INT DEFAULT 1,             -- Sức chứa (mặc định 1 người)
     attributes JSONB DEFAULT '{}'::jsonb,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL         
+    deleted_at TIMESTAMPTZ NULL
 );
 
 -- ==============================================================================
@@ -349,28 +351,28 @@ CREATE TABLE resources (
  */
 CREATE TABLE bookings (
     id BIGSERIAL PRIMARY KEY,
-    uid UUID DEFAULT uuid_generate_v4() UNIQUE, 
+    uid UUID DEFAULT uuid_generate_v4() UNIQUE,
     customer_id BIGINT REFERENCES users(id),
     merchant_id BIGINT REFERENCES merchants(id),
     service_id BIGINT REFERENCES services(id),
     resource_id BIGINT REFERENCES resources(id),
-    
-    start_time TIMESTAMPTZ NOT NULL,    
-    end_time TIMESTAMPTZ NOT NULL,      
+
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
     attributes JSONB DEFAULT '{}'::jsonb,
-    
+
     total_price DECIMAL(12, 2) NOT NULL,
-    deposit_amount DECIMAL(12, 2) DEFAULT 0, 
-    
-    status VARCHAR(20) DEFAULT 'pending', 
+    deposit_amount DECIMAL(12, 2) DEFAULT 0,
+
+    status VARCHAR(20) DEFAULT 'pending',
     payment_status VARCHAR(20) DEFAULT 'unpaid', -- Trạng thái thanh toán
-    
+
     cancel_reason TEXT,                 -- Lý do hủy
     cancelled_by BIGINT REFERENCES users(id), -- ID người hủy
-    
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL         
+    deleted_at TIMESTAMPTZ NULL
 );
 
 -- Bảng: booking_history (Lưu vết thay đổi trạng thái)
@@ -392,24 +394,24 @@ CREATE TABLE transactions (
     id BIGSERIAL PRIMARY KEY,
     uid UUID DEFAULT uuid_generate_v4() UNIQUE,
     booking_id BIGINT REFERENCES bookings(id),
-    user_id BIGINT REFERENCES users(id),       
-    
+    user_id BIGINT REFERENCES users(id),
+
     amount DECIMAL(12, 2) NOT NULL,
     commission_rate DECIMAL(5, 2) DEFAULT 0,   -- Tỷ lệ phí sàn
     commission_amount DECIMAL(12, 2) DEFAULT 0, -- Số tiền phí sàn thu
-    
-    transaction_type VARCHAR(20) NOT NULL,     
-    payment_method VARCHAR(50),                
-    
-    status VARCHAR(20) DEFAULT 'pending',      
-    gateway_transaction_id VARCHAR(255),       
+
+    transaction_type VARCHAR(20) NOT NULL,
+    payment_method VARCHAR(50),
+
+    status VARCHAR(20) DEFAULT 'pending',
+    gateway_transaction_id VARCHAR(255),
     parent_transaction_id BIGINT REFERENCES transactions(id), -- Liên kết hoàn tiền
-    
+
     attributes JSONB DEFAULT '{}'::jsonb,
-    
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL                
+    deleted_at TIMESTAMPTZ NULL
 );
 
 -- ==============================================================================
@@ -426,18 +428,18 @@ CREATE TABLE reviews (
     booking_id BIGINT REFERENCES bookings(id) ON DELETE CASCADE,
     customer_id BIGINT REFERENCES users(id),
     merchant_id BIGINT REFERENCES merchants(id),
-    
+
     rating INT CHECK (rating >= 1 AND rating <= 5) NOT NULL,
     content TEXT,
-    media_urls JSONB DEFAULT '[]'::jsonb,      
-    
+    media_urls JSONB DEFAULT '[]'::jsonb,
+
     status VARCHAR(20) DEFAULT 'approved',     -- Kiểm duyệt: approved, hidden, reported
-    helpful_count INT DEFAULT 0,               
-    merchant_reply TEXT,                       
-    
+    helpful_count INT DEFAULT 0,
+    merchant_reply TEXT,
+
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL                
+    deleted_at TIMESTAMPTZ NULL
 );
 
 /*
@@ -447,30 +449,30 @@ CREATE TABLE reviews (
 CREATE TABLE promotions (
     id BIGSERIAL PRIMARY KEY,
     uid UUID DEFAULT uuid_generate_v4() UNIQUE,
-    merchant_id BIGINT REFERENCES merchants(id) NULL, 
-    
+    merchant_id BIGINT REFERENCES merchants(id) NULL,
+
     banner_url TEXT,
-    code VARCHAR(50) UNIQUE NOT NULL,          
-    discount_type VARCHAR(20) NOT NULL,        
-    discount_value DECIMAL(12, 2) NOT NULL, 
-    
-    max_discount_amount DECIMAL(12, 2),        
+    code VARCHAR(50) UNIQUE NOT NULL,
+    discount_type VARCHAR(20) NOT NULL,
+    discount_value DECIMAL(12, 2) NOT NULL,
+
+    max_discount_amount DECIMAL(12, 2),
     min_order_value DECIMAL(12, 2) DEFAULT 0,
-    
-    usage_limit INT,                           
+
+    usage_limit INT,
     usage_limit_per_user INT DEFAULT 1,        -- Giới hạn mỗi người dùng
     used_count INT DEFAULT 0,
-    
-    conditions JSONB DEFAULT '{}'::jsonb,      
-    
+
+    conditions JSONB DEFAULT '{}'::jsonb,
+
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ NOT NULL,
-    
+
     is_public BOOLEAN DEFAULT TRUE,            -- Hiển thị công khai hay mã riêng
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL                
+    deleted_at TIMESTAMPTZ NULL
 );
 
 /*
@@ -483,21 +485,21 @@ CREATE TABLE chat_rooms (
     customer_id BIGINT REFERENCES users(id),
     merchant_id BIGINT REFERENCES merchants(id),
     last_message_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(customer_id, merchant_id) 
+    UNIQUE(customer_id, merchant_id)
 );
 
 CREATE TABLE messages (
     id BIGSERIAL PRIMARY KEY,
     room_id BIGINT REFERENCES chat_rooms(id) ON DELETE CASCADE,
-    sender_id BIGINT REFERENCES users(id), 
-    
+    sender_id BIGINT REFERENCES users(id),
+
     message_type VARCHAR(20) DEFAULT 'text',   -- 'text', 'image', 'booking_card'
     content TEXT,
-    
+
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ NULL    
+    deleted_at TIMESTAMPTZ NULL
 );
 
 /*
@@ -509,7 +511,7 @@ CREATE TABLE wishlists (
     customer_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     merchant_id BIGINT REFERENCES merchants(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(customer_id, merchant_id) 
+    UNIQUE(customer_id, merchant_id)
 );
 
 /*
@@ -615,7 +617,7 @@ CREATE INDEX idx_booking_history_booking_id ON booking_history (booking_id);
 CREATE INDEX idx_merchant_revisions_status ON merchant_revisions (status);
 
 -- 14. [Nâng cao] Partial Index: Chỉ index những dịch vụ ĐANG BẬT và CHƯA BỊ XÓA
-CREATE INDEX idx_services_active_visible ON services (merchant_id) 
+CREATE INDEX idx_services_active_visible ON services (merchant_id)
 WHERE is_active = TRUE AND deleted_at IS NULL;
 
 -- 15. Sắp xếp tiệm theo đánh giá

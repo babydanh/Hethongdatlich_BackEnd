@@ -1,5 +1,5 @@
 # Stage 1: Development
-FROM node:23-alpine
+FROM node:24-alpine
 
 WORKDIR /usr/src/app
 
